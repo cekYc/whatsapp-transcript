@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SesYazı</string>
+    <string name="title">Sesli mesajı oku</string>
+    <string name="subtitle">WhatsApp sesini oynatmadan, cihazında Türkçe metne çevir.</string>
+    <string name="how_to_title">WhatsApp’tan nasıl kullanılır?</string>
+    <string name="how_to_body">Sesli mesaja uzun bas → Paylaş → SesYazı’yı seç. Ses cihazında işlenir.</string>
+    <string name="model_title">Türkçe konuşma modeli</string>
+    <string name="model_missing">İlk kullanım için yaklaşık 104 MB model gerekiyor.</string>
+    <string name="model_ready">Hazır · çevrimdışı çalışır</string>
+    <string name="download_model">Modeli indir</string>
+    <string name="choose_audio">Ses dosyası seç</string>
+    <string name="audio_title">Seçilen ses</string>
+    <string name="transcribe">Metne çevir</string>
+    <string name="result_title">Transkript</string>
+    <string name="copy">Kopyala</string>
+    <string name="share_text">Metni paylaş</string>
+    <string name="privacy_note">Gizlilik: Ses yalnızca uygulamanın geçici klasörüne kopyalanır, sunucuya yüklenmez ve işlemden sonra silinir. İnternet sadece modeli ilk kez indirmek için kullanılır.</string>
+    <string name="copy_success">Transkript kopyalandı</string>
+    <string name="share_transcript">Transkripti paylaş</string>
+    <string name="progress_preparing">Ses hazırlanıyor…</string>
+    <string name="progress_decoding">Ses çözülüyor…</string>
+    <string name="progress_transcribing">Türkçe metne çevriliyor…</string>
+    <string name="progress_model_check">Model kontrol ediliyor…</string>
+    <string name="generic_error">Bir sorun oluştu. Lütfen tekrar dene.</string>
+</resources>

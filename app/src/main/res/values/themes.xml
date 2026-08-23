@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.SesYazi" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/brand_green</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorPrimaryContainer">@color/brand_mint</item>
+        <item name="colorOnPrimaryContainer">@color/brand_green_dark</item>
+        <item name="android:colorAccent">@color/brand_green</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:navigationBarColor">@color/surface_warm</item>
+        <item name="android:statusBarColor">@color/surface_warm</item>
+        <item name="android:windowBackground">@color/surface_warm</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>
