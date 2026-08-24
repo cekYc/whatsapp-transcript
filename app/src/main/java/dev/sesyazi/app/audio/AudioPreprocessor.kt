@@ -31,13 +31,6 @@ object AudioPreprocessor {
         }
     }
 
-    fun padWithSilence(samples: FloatArray, paddingSamples: Int): FloatArray {
-        if (paddingSamples <= 0) return samples
-        return FloatArray(samples.size + paddingSamples * 2).also { padded ->
-            samples.copyInto(padded, destinationOffset = paddingSamples)
-        }
-    }
-
     private const val TARGET_RMS = 0.12f
     private const val MIN_USEFUL_RMS = 0.0015f
     private const val MIN_GAIN = 0.5f

@@ -41,8 +41,9 @@ isteyebilir. Debug APK geliştirme amaçlı imzalı ve doğrudan kurulabilirdir.
   `MediaCodec` ile açılır.
 - Ses mono 16 kHz PCM’e dönüştürülür.
 - Ses seviyesi ve DC kayması transkripsiyondan önce normalize edilir.
-- Silero VAD uzun sessizlikleri ayırır; konuşma parçaları modele ayrı ayrı
-  verilir ve sonuçlar Türkçe metin kurallarıyla birleştirilir.
+- Silero VAD konuşma aralıklarını belirler. Kısa doğal duraksamalar aynı
+  28 saniyelik bağlam bloğunda tutulur; yalnızca uzun sessizlikler ve bağlam
+  sınırları ayrılır. Örtüşen sonuçlar Türkçe metin kurallarıyla birleştirilir.
 - Türkçe transkripsiyon `sherpa-onnx` üzerinde Whisper Tiny, Base veya Small
   Multilingual INT8 modeliyle tamamen yerel çalışır.
 

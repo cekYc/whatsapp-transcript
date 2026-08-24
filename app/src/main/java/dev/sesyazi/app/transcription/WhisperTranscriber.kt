@@ -12,7 +12,6 @@ import dev.sesyazi.app.audio.AudioPreprocessor
 import dev.sesyazi.app.audio.DecodedAudio
 import dev.sesyazi.app.model.InstalledSpeechModel
 import java.io.Closeable
-import kotlin.math.ceil
 
 open class TranscriptionException(message: String, cause: Throwable? = null) :
     RuntimeException(message, cause)
@@ -93,8 +92,8 @@ class WhisperTranscriber(private val model: InstalledSpeechModel) : Closeable {
         }
 
         val normalized = AudioPreprocessor.normalize(audio.samples)
-        val speechChunks = detectSpeech(normalized)
-        val chunks = speechChunks.ifEmpty { fixedChunks(normalized) }
+        val speechRegions = detectSpeech(normalized)
+        val chunks = SpeechChunker.contextChunks(normalized, speechRegions)
 
         var transcript = ""
         chunks.forEachIndexed { index, chunk ->
@@ -120,9 +119,9 @@ class WhisperTranscriber(private val model: InstalledSpeechModel) : Closeable {
         return transcript.trim()
     }
 
-    private fun detectSpeech(samples: FloatArray): List<FloatArray> {
+    private fun detectSpeech(samples: FloatArray): List<SpeechRegion> {
         vad.reset()
-        val chunks = mutableListOf<FloatArray>()
+        val regions = mutableListOf<SpeechRegion>()
         var offset = 0
         while (offset < samples.size) {
             val window = FloatArray(VAD_WINDOW_SIZE)
@@ -133,38 +132,23 @@ class WhisperTranscriber(private val model: InstalledSpeechModel) : Closeable {
                 endIndex = minOf(offset + VAD_WINDOW_SIZE, samples.size),
             )
             vad.acceptWaveform(window)
-            drainVad(chunks)
+            drainVad(regions)
             offset += VAD_WINDOW_SIZE
         }
         vad.flush()
-        drainVad(chunks)
-        return chunks
+        drainVad(regions)
+        return regions
     }
 
-    private fun drainVad(chunks: MutableList<FloatArray>) {
+    private fun drainVad(regions: MutableList<SpeechRegion>) {
         while (!vad.empty()) {
-            val speech = vad.front().samples
+            val speech = vad.front()
             vad.pop()
-            if (speech.size >= MIN_SPEECH_SAMPLES) {
-                chunks += AudioPreprocessor.padWithSilence(speech, SPEECH_PADDING_SAMPLES)
-            }
-        }
-    }
-
-    private fun fixedChunks(samples: FloatArray): List<FloatArray> {
-        val chunkSize = CHUNK_SECONDS * TARGET_SAMPLE_RATE
-        if (samples.size <= chunkSize) return listOf(samples)
-
-        val overlapSize = OVERLAP_MILLISECONDS * TARGET_SAMPLE_RATE / 1_000
-        val stride = chunkSize - overlapSize
-        val chunkCount = 1 + ceil((samples.size - chunkSize).toDouble() / stride).toInt()
-        return buildList(chunkCount) {
-            var start = 0
-            while (start < samples.size) {
-                val end = minOf(start + chunkSize, samples.size)
-                add(samples.copyOfRange(start, end))
-                if (end == samples.size) break
-                start += stride
+            if (speech.samples.size >= MIN_SPEECH_SAMPLES) {
+                regions += SpeechRegion(
+                    startSample = speech.start,
+                    endSampleExclusive = speech.start + speech.samples.size,
+                )
             }
         }
     }
@@ -178,8 +162,5 @@ class WhisperTranscriber(private val model: InstalledSpeechModel) : Closeable {
         const val TARGET_SAMPLE_RATE = 16_000
         const val VAD_WINDOW_SIZE = 512
         const val MIN_SPEECH_SAMPLES = TARGET_SAMPLE_RATE / 4
-        const val SPEECH_PADDING_SAMPLES = TARGET_SAMPLE_RATE * 150 / 1_000
-        const val CHUNK_SECONDS = 28
-        const val OVERLAP_MILLISECONDS = 750
     }
 }
