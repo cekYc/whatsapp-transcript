@@ -21,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.progressindicator.LinearProgressIndicator
 import dev.sesyazi.app.databinding.ActivityMainBinding
+import dev.sesyazi.app.model.ModelTier
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -62,6 +63,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun bindActions() = with(binding) {
         downloadModelButton.setOnClickListener { viewModel.downloadModel() }
+        modelQualityGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val tier = when (checkedId) {
+                R.id.fastModelButton -> ModelTier.FAST
+                R.id.balancedModelButton -> ModelTier.BALANCED
+                R.id.accurateModelButton -> ModelTier.ACCURATE
+                else -> return@addOnButtonCheckedListener
+            }
+            if (viewModel.state.value.selectedTier != tier) viewModel.selectModel(tier)
+        }
         chooseAudioButton.setOnClickListener { audioPicker.launch(arrayOf("audio/*", "application/ogg")) }
         transcribeButton.setOnClickListener { viewModel.transcribe() }
         errorText.setOnClickListener { viewModel.clearError() }
@@ -78,12 +89,42 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun render(state: MainUiState) = with(binding) {
-        modelStatusText.text = when (state.modelState) {
-            ModelState.CHECKING -> getString(R.string.progress_model_check)
-            ModelState.MISSING -> getString(R.string.model_missing)
-            ModelState.DOWNLOADING -> "Model indiriliyor · ${state.progressPercent ?: 0}%"
-            ModelState.READY -> getString(R.string.model_ready)
+        val selectedButton = when (state.selectedTier) {
+            ModelTier.FAST -> R.id.fastModelButton
+            ModelTier.BALANCED -> R.id.balancedModelButton
+            ModelTier.ACCURATE -> R.id.accurateModelButton
         }
+        if (modelQualityGroup.checkedButtonId != selectedButton) {
+            modelQualityGroup.check(selectedButton)
+        }
+        fastModelButton.isEnabled = !state.isBusy
+        balancedModelButton.isEnabled = !state.isBusy
+        accurateModelButton.isEnabled = !state.isBusy
+
+        modelStatusText.text = when (state.modelState) {
+            ModelState.CHECKING -> getString(
+                R.string.model_checking,
+                state.selectedTier.displayName,
+            )
+            ModelState.MISSING -> getString(
+                R.string.model_missing,
+                state.selectedTier.description,
+                state.modelSizeMegabytes,
+            )
+            ModelState.DOWNLOADING -> getString(
+                R.string.model_downloading,
+                state.selectedTier.displayName,
+                state.progressPercent ?: 0,
+            )
+            ModelState.READY -> getString(
+                R.string.model_ready,
+                state.selectedTier.displayName,
+            )
+        }
+        downloadModelButton.text = getString(
+            R.string.download_model,
+            state.selectedTier.displayName,
+        )
         downloadModelButton.isVisible = state.modelState == ModelState.MISSING ||
             state.modelState == ModelState.DOWNLOADING
         downloadModelButton.isEnabled = !state.isBusy && state.modelState == ModelState.MISSING

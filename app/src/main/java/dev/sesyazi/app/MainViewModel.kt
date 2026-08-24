@@ -9,6 +9,7 @@ import dev.sesyazi.app.audio.AudioDecoder
 import dev.sesyazi.app.audio.SharedAudioStore
 import dev.sesyazi.app.model.ModelDownloadException
 import dev.sesyazi.app.model.ModelManager
+import dev.sesyazi.app.model.ModelTier
 import dev.sesyazi.app.transcription.ModelInitializationException
 import dev.sesyazi.app.transcription.TranscriptionException
 import dev.sesyazi.app.transcription.WhisperTranscriber
@@ -36,6 +37,8 @@ enum class Operation {
 
 data class MainUiState(
     val modelState: ModelState = ModelState.CHECKING,
+    val selectedTier: ModelTier = ModelTier.BALANCED,
+    val modelSizeMegabytes: Int = 0,
     val isBusy: Boolean = false,
     val operation: Operation? = null,
     val progressPercent: Int? = null,
@@ -49,17 +52,52 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val modelManager = ModelManager(application)
     private val audioStore = SharedAudioStore(application)
     private val audioDecoder = AudioDecoder()
+    private val initialTier = modelManager.selectedTier()
 
-    private val mutableState = MutableStateFlow(MainUiState())
+    private val mutableState = MutableStateFlow(
+        MainUiState(
+            selectedTier = initialTier,
+            modelSizeMegabytes = modelManager.downloadSizeMegabytes(initialTier),
+        ),
+    )
     val state: StateFlow<MainUiState> = mutableState.asStateFlow()
 
     private var stagedAudioFile: File? = null
 
     init {
         viewModelScope.launch {
-            val ready = withContext(Dispatchers.IO) { modelManager.isReady() }
+            val ready = withContext(Dispatchers.IO) { modelManager.isReady(initialTier) }
             mutableState.update {
-                it.copy(modelState = if (ready) ModelState.READY else ModelState.MISSING)
+                if (it.selectedTier == initialTier) {
+                    it.copy(modelState = if (ready) ModelState.READY else ModelState.MISSING)
+                } else {
+                    it
+                }
+            }
+        }
+    }
+
+    fun selectModel(tier: ModelTier) {
+        val current = mutableState.value
+        if (current.isBusy || current.selectedTier == tier) return
+
+        modelManager.selectTier(tier)
+        mutableState.update {
+            it.copy(
+                selectedTier = tier,
+                modelSizeMegabytes = modelManager.downloadSizeMegabytes(tier),
+                modelState = ModelState.CHECKING,
+                errorMessage = null,
+            )
+        }
+        viewModelScope.launch {
+            val ready = withContext(Dispatchers.IO) { modelManager.isReady(tier) }
+            mutableState.update {
+                if (it.selectedTier == tier) {
+                    it.copy(modelState = if (ready) ModelState.READY else ModelState.MISSING)
+                } else {
+                    it
+                }
             }
         }
     }
@@ -102,6 +140,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun downloadModel() {
         if (mutableState.value.isBusy || mutableState.value.modelState == ModelState.READY) return
+        val tier = mutableState.value.selectedTier
         viewModelScope.launch {
             mutableState.update {
                 it.copy(
@@ -115,7 +154,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
             try {
                 withContext(Dispatchers.IO) {
-                    modelManager.ensureDownloaded { progress ->
+                    modelManager.ensureDownloaded(tier) { progress ->
                         mutableState.update {
                             it.copy(
                                 progressPercent = progress.percent,
@@ -149,6 +188,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun transcribe() {
         val audioFile = stagedAudioFile ?: return
         if (mutableState.value.isBusy || mutableState.value.modelState != ModelState.READY) return
+        val tier = mutableState.value.selectedTier
 
         viewModelScope.launch {
             mutableState.update {
@@ -172,7 +212,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 val transcript = withContext(Dispatchers.Default) {
-                    WhisperTranscriber(modelManager.modelDirectory()).use { transcriber ->
+                    WhisperTranscriber(modelManager.installedModel(tier)).use { transcriber ->
                         transcriber.transcribe(decoded) { percent ->
                             mutableState.update { it.copy(progressPercent = percent) }
                         }
@@ -193,7 +233,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             } catch (error: Throwable) {
                 if (error is ModelInitializationException) {
-                    modelManager.invalidate()
+                    modelManager.invalidate(tier)
                 }
                 mutableState.update {
                     it.copy(

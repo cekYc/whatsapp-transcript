@@ -16,8 +16,8 @@ Android 8.0 veya üzerini gerektirir.
 
 İlk kullanım:
 
-1. SesYazı’yı aç ve **Modeli indir** düğmesine dokun. Yaklaşık 104 MB’lık
-   Türkçe destekli model bir kez indirilir.
+1. SesYazı’yı aç, kaliteyi seç ve **Modeli indir** düğmesine dokun. Önerilen
+   **Dengeli** model yaklaşık 162 MB’tır ve bir kez indirilir.
 2. WhatsApp’ta bir sesli mesaja uzun bas.
 3. **Paylaş → SesYazı** yolunu seç.
 4. **Metne çevir** düğmesine dokun; sonucu kopyala veya paylaş.
@@ -40,10 +40,18 @@ isteyebilir. Debug APK geliştirme amaçlı imzalı ve doğrudan kurulabilirdir.
 - OGG/Opus ve cihazın desteklediği diğer sesler `MediaExtractor` +
   `MediaCodec` ile açılır.
 - Ses mono 16 kHz PCM’e dönüştürülür.
-- 30 saniyeden uzun kayıtlar 28 saniyelik örtüşen parçalara ayrılır; sınırdaki
-  tekrarlar Türkçe metin kurallarıyla birleştirilir.
-- Türkçe transkripsiyon, `sherpa-onnx` üzerinde Whisper Tiny Multilingual INT8
-  modeliyle tamamen yerel çalışır.
+- Ses seviyesi ve DC kayması transkripsiyondan önce normalize edilir.
+- Silero VAD uzun sessizlikleri ayırır; konuşma parçaları modele ayrı ayrı
+  verilir ve sonuçlar Türkçe metin kurallarıyla birleştirilir.
+- Türkçe transkripsiyon `sherpa-onnx` üzerinde Whisper Tiny, Base veya Small
+  Multilingual INT8 modeliyle tamamen yerel çalışır.
+
+### Kalite seçenekleri
+
+- **Hızlı (Tiny):** yaklaşık 105 MB; daha hızlı, temel doğruluk.
+- **Dengeli (Base):** yaklaşık 162 MB; varsayılan ve önerilen seçenek.
+- **Yüksek (Small):** yaklaşık 377 MB; daha doğru fakat daha yavaş ve daha çok
+  bellek kullanır.
 
 ## Geliştirme
 
@@ -64,8 +72,8 @@ Komut satırı doğrulaması:
 
 - Bu çözüm WhatsApp mesaj balonunun içine yerleşmez; WhatsApp’ın paylaşım
   menüsü üzerinden açılır.
-- Tiny model hızlı ve küçüktür fakat gürültülü kayıtlarda veya özel isimlerde
-  hata yapabilir.
+- Gürültü, üst üste konuşma, çok düşük ses ve özel isimler hâlâ hataya neden
+  olabilir. Böyle kayıtlarda **Yüksek** kaliteyi deneyin.
 - MVP sürümünde tek kayıt için sınır 15 dakika ve 200 MB’tır.
 - İşlem süresi telefonun işlemcisine göre değişir; ses hiçbir zaman otomatik
   olarak oynatılmaz.

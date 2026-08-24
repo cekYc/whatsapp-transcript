@@ -6,8 +6,13 @@ SesYazı aşağıdaki açık kaynak bileşenleri ve model dosyalarını kullanı
   Kaynak: https://github.com/k2-fsa/sherpa-onnx
 - **Whisper** — OpenAI, MIT License  
   Kaynak: https://github.com/openai/whisper
-- **sherpa-onnx-whisper-tiny model dönüşümü** — k2-fsa/csukuangfj  
-  Model: https://huggingface.co/csukuangfj/sherpa-onnx-whisper-tiny
+- **sherpa-onnx Whisper Tiny, Base ve Small model dönüşümleri** —
+  k2-fsa/csukuangfj
+  Modeller: https://huggingface.co/csukuangfj/sherpa-onnx-whisper-tiny,
+  https://huggingface.co/csukuangfj/sherpa-onnx-whisper-base,
+  https://huggingface.co/csukuangfj/sherpa-onnx-whisper-small
+- **Silero VAD** — Silero Team, MIT License
+  Kaynak: https://github.com/snakers4/silero-vad
 
 AndroidX, Material Components ve Kotlin Coroutines kendi ilgili açık kaynak
 lisanslarıyla dağıtılır. Uygulama model ağırlıklarını APK içine gömmez; ilk
